@@ -9,9 +9,9 @@ async function loginEmaktab(login, password) {
 
         
         await page.waitForSelector('[data-test-id="login-field"]', { timeout: 10000 });
-        await page.waitForSelector('[data-test-id="password-field"]', { timeout: 10000 });
- 
         await page.type('[data-test-id="login-field"]', login);
+
+        await page.waitForSelector('[data-test-id="password-field"]', { timeout: 10000 });-
         await page.type('[data-test-id="password-field"]', password);
 
         
@@ -20,18 +20,24 @@ async function loginEmaktab(login, password) {
             page.waitForNavigation({ waitUntil: 'networkidle2' }),
         ]);
  
-        const stillOnLoginPage = await page.$('[data-test-id="login-field"]');
-        const errorText = await page.$eval('.invalid-feedback', el => el.textContent).catch(() => null);
+         const loginStillVisible = await page.$('[data-test-id="login-field"]');
+        const errorText = await page.$eval('[data-test-id="error-message"]', el => el.textContent).catch(() => null);
 
-        if (stillOnLoginPage || errorText) {
-            console.log(`❌ Ошибка входа для ${login}: ${errorText?.trim() || 'Неверный логин или пароль'}`);
+        if (typeof errorText === 'string' && errorText.trim()) {
+            console.log(`❌ Ошибка входа для ${login}: ${errorText.trim()}`);
+            return false;
+        } else if (loginStillVisible) {
+            console.log(`❌ Ошибка входа для ${login}: Неверный логин или пароль`);
+            return false;
         } else {
             console.log(`✅ Успешный вход: ${login}`);
             await new Promise(resolve => setTimeout(resolve, 5000));
+            return true;
         }
 
     } catch (error) {
         console.error(`❌ Ошибка Puppeteer для ${login}:`, error.message);
+        return false;
     } finally {
         await browser.close();
     }

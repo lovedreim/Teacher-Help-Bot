@@ -47,19 +47,27 @@ bot.on('document', async(ctx) => {
         
         console.log('Данные из Excel', data);
 
-        
+        const failedLogins = [];
 
-        for(let row of data){
-             const login = row['login'] || row['логин'];
-            const password = row['password'] || row['пароль'];
+       for (let row of data) {
+            const login = row.login || row.логин;
+            const password = String(row.password || row.пароль); // перевод в строку
 
-        if(login && password){
-        await loginEmaktab(login, password);
-    }
-}
-         
+            if (login && password) {
+                const success = await loginEmaktab(login, password);
+                if (!success) {
+                    failedLogins.push(login);
+                }
+            }
+        }
 
-        ctx.reply(`✅ Готово! Все ${data.length} аккаунтов были обработаны.`);
+         if (failedLogins.length > 0) {
+            ctx.reply(`❌ Не удалось войти в аккаунты:\n${failedLogins.join('\n')}\n\n✅ Остальные аккаунты были успешно обработаны.`);
+        } else {
+            ctx.reply(`✅ Все аккаунты успешно обработаны.`);
+        }
+
+
     } catch (err) {
         console.error('Ошибка при обработке Excel:', err);
         ctx.reply('❌ Произошла ошибка при чтении или обработке файла.');
